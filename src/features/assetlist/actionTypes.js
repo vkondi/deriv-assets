@@ -1,0 +1,6 @@
+export const GET_RANDOM_NUMBER = 'GET_RANDOM_NUMBER';
+export const SET_ASSET_DATA = 'SET_ASSET_DATA';
+export const SHOW_LOADER = 'SHOW_LOADER';
+export const HIDE_LOADER = 'HIDE_LOADER';
+export const SET_TAB_DATA = 'SET_TAB_DATA';
+export const SET_ACTIVE_CATEGORY = 'SET_ACTIVE_CATEGORY';
