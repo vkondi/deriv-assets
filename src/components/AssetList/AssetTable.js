@@ -76,6 +76,7 @@ export default function AssetTable() {
       (prevObj, item) => {
         const prevSubCatData = _.get(prevObj, 'subCatdata', []);
         const prevArray = _.get(prevObj, 'array', []);
+        const tempArray = [];
 
         const id = _.get(item, 'submarket');
         const displayName = _.get(item, 'submarket_display_name');
@@ -130,7 +131,6 @@ export default function AssetTable() {
           {Array.isArray(subCategoryData) &&
             subCategoryData.map((item, index) => (
               <Button
-                key={index}
                 onClick={() => onSubCategoryClick(index, item)}
                 variant={subCategoryIndex === index ? 'contained' : 'outlined'}>
                 {item?.displayName}
@@ -146,7 +146,7 @@ export default function AssetTable() {
             <EnhancedTableHead />
             <TableBody>
               {tableData.map((row, index) => (
-                <TableRecord row={row} key={index} />
+                <TableRecord row={row} />
               ))}
             </TableBody>
           </Table>

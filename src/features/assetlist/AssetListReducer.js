@@ -63,8 +63,8 @@ const initialState = {
 };
 
 const reducer = (state = initialState, action) => {
-  console.log('[AssetListReducer][reducer] >> action: ', action.type);
-  console.log('[AssetListReducer][reducer] >> payload: ', action?.payload);
+  // console.log('[AssetListReducer][reducer] >> action: ', action.type);
+  // console.log('[AssetListReducer][reducer] >> payload: ', action?.payload);
 
   switch (action.type) {
     case SET_ASSET_DATA:
