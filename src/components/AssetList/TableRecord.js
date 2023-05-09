@@ -1,93 +1,109 @@
-import React, {useState, useEffect, useCallback} from 'react';
+import React, {useState, useEffect, useCallback, useRef} from 'react';
 import PropTypes from 'prop-types';
-import DerivAPIBasic from '@deriv/deriv-api/dist/DerivAPIBasic';
 import _ from 'lodash';
 
 import TableCell from '@mui/material/TableCell';
 import TableRow from '@mui/material/TableRow';
 import Button from '@mui/material/Button';
-import {
-  LineChart,
-  Line,
-  XAxis,
-  YAxis,
-  CartesianGrid,
-  Tooltip,
-  Legend,
-  ResponsiveContainer,
-} from 'recharts';
+import {LineChart, Line, Tooltip} from 'recharts';
 
-// Hard coded graph data
-const data = [
-  {name: 'Page A', uv: 400, pv: 2400, amt: 2400},
-  {name: 'Page B', uv: 500, pv: 2400, amt: 2400},
-  {name: 'Page A', uv: 200, pv: 2400, amt: 2400},
-  {name: 'Page A', uv: 100, pv: 2400, amt: 2400},
-  {name: 'Page A', uv: 400, pv: 2400, amt: 2400},
-  {name: 'Page A', uv: 450, pv: 2400, amt: 2400},
-];
+import config from '../../config';
 
 export default function TableRecord(props) {
   const {row} = props;
 
-  const appId = 36480; // 1089; // Replace with your appId or leave as 1089 for testing.
-  const connection = new WebSocket(
-    `wss://ws.binaryws.com/websockets/v3?app_id=${appId}`
-  );
-  const api = new DerivAPIBasic({connection});
-  // const ticks_history_request = {
-  //   ticks_history: "R_50",
-  //   adjust_start_time: 1,
-  //   count: 10,
-  //   end: "latest",
-  //   start: 1,
-  //   style: "ticks"
-  // };
-
   const [symbol, setSymbol] = useState(null);
-  const [subscriptionId, setSubscriptionId] = useState(null);
-  const [ticksHistoryRequest, setTicksHistoryRequest] = useState(null);
+  const [quote, setQuote] = useState(null);
   const [chartData, setChartData] = useState([]);
 
+  const tickSubscription = useRef();
+
   useEffect(() => {
-    return function cleanup() {
-      console.log('[TableRecord] >> unmount for: ', props?.row);
+    return function cleanupComponent() {
+      // Forget all the subscriptions related to this component
+      config.derivAPI.forgetAll();
 
-      // If subscriptionId exists, then call API to de-register subscription
-      if (subscriptionId) forgetSubscription(subscriptionId);
-
-      connection.removeEventListener('message', ticksHistoryResponse, false);
-      api.disconnect();
+      // Unsubscribe ticks specifically if still polling
+      cleanUp();
     };
   }, []);
 
   useEffect(() => {
-    console.log('[TableRecord] >> row: ', row);
     if (row) {
       setSymbol(row?.symbol);
-      setTicksHistoryRequest({
-        ticks_history: row?.symbol,
-        adjust_start_time: 1,
-        count: 10,
-        end: 'latest',
-        start: 1,
-        style: 'ticks',
-      });
+
+      // When exchange is closed, set the last price from tick history response
+      if (
+        row?.exchange_is_open === 0 &&
+        Array.isArray(chartData) &&
+        chartData.length > 0
+      ) {
+        setQuote(chartData[chartData.length - 1]?.price);
+      }
     }
-  }, [row]);
+  }, [row, chartData]);
 
   useEffect(() => {
-    if (ticksHistoryRequest) getTicksHistory();
-  }, [ticksHistoryRequest]);
+    if (symbol) getTicksHistory();
+  }, [symbol]);
 
-  const ticksHistoryResponse = async res => {
+  useEffect(() => {
+    if (symbol && row?.exchange_is_open === 1) subscribeTicks();
+  }, [symbol]);
+
+  const cleanUp = () => {
+    return new Promise((resolve, reject) => {
+      try {
+        if (tickSubscription.current) {
+          tickSubscription.current.unsubscribe();
+        }
+
+        resolve();
+      } catch (e) {
+        console.log('[TableRecord][cleanUp] >> Exception: ', e);
+        reject(e);
+      }
+    });
+  };
+
+  const subscribeTicks = async e => {
+    console.log('[TableRecord] >> [subscribeTicks]');
+
+    try {
+      cleanUp();
+
+      const ticks = config.derivAPI.subscribe({ticks: symbol});
+      tickSubscription.current = ticks.subscribe(handleTickSubscription);
+
+      // Unsubscribe after configured timeout for DEBUG mode
+      if (config.DEBUG_MODE) {
+        setTimeout(() => {
+          cleanUp();
+        }, config.DEBUG_TICKS_SUBSCRIPTION_TIMER);
+      }
+    } catch (err) {
+      console.log('[TableRecord][subscribeTicks] >> Exception: ', err);
+    }
+  };
+
+  const handleTickSubscription = res => {
+    console.log('[TableRecord] >> [handleTickSubscription]');
+
+    if (res.error !== undefined) {
+      console.log('Error : ', res.error.message);
+      cleanUp();
+      return;
+    }
+
+    setQuote(res?.tick?.quote);
+  };
+
+  const ticksHistoryResponse = dataRes => {
     console.log('[TableRecord] >> [ticksHistoryResponse]');
-
-    const dataRes = JSON.parse(res.data);
+    // debugger; // eslint-disable-line no-debugger
     if (dataRes.error !== undefined) {
-      console.log('Error : ', data.error.message);
-      connection.removeEventListener('message', ticksHistoryResponse, false);
-      await api.disconnect();
+      console.log('Error : ', dataRes.error.message);
+      return;
     }
 
     const pricesArray = _.get(dataRes, 'history.prices', []);
@@ -98,29 +114,24 @@ export default function TableRecord(props) {
     });
 
     setChartData(chartArrayData);
-
-    connection.removeEventListener('message', ticksHistoryResponse, false);
   };
 
-  const getTicksHistory = useCallback(async () => {
+  const getTicksHistory = () => {
     console.log('[TableRecord] >> [getTicksHistory]');
 
-    connection.addEventListener('message', ticksHistoryResponse);
-    await api.ticksHistory(ticksHistoryRequest);
-  }, [ticksHistoryRequest]);
-
-  const forgetSubscriptionResponse = res => {
-    console.log('[TableRecord] >> [forgetSubscriptionResponse]');
-  };
-
-  const forgetSubscription = async () => {
-    console.log('[TableRecord] >> [forgetSubscription]');
-
-    connection.addEventListener('message', forgetSubscriptionResponse);
-    await api.ticksHistory({
-      forget: subscriptionId,
-      req_id: 1,
-    });
+    config.derivAPI
+      .ticksHistory({
+        ticks_history: symbol,
+        adjust_start_time: 1,
+        count: 30,
+        end: 'latest',
+        start: 30,
+        style: 'ticks',
+      })
+      .then(ticksHistoryResponse)
+      .catch(err => {
+        console.log('[TableRecord][getTicksHistory] >> Exception: ', err);
+      });
   };
 
   return (
@@ -130,7 +141,7 @@ export default function TableRecord(props) {
       key={row.display_name}
       sx={{cursor: 'pointer'}}>
       <TableCell scope="row">{row?.display_name}</TableCell>
-      <TableCell>{row.spot}</TableCell>
+      <TableCell>{quote}</TableCell>
       <TableCell>{row.spot_percentage_change}</TableCell>
       <TableCell
         sx={{

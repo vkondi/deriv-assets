@@ -4,7 +4,6 @@ import DerivAPIBasic from '@deriv/deriv-api/dist/DerivAPIBasic';
 import _ from 'lodash';
 
 import AssetList from 'components/AssetList';
-// import classes from './App.module.css';
 import {useActiveCategory} from 'features/assetlist';
 
 import {
@@ -14,30 +13,34 @@ import {
   SHOW_LOADER,
   SET_ACTIVE_CATEGORY,
 } from 'features/assetlist/actionTypes';
+import config from '../../config';
+
+config.derivAPI = new DerivAPIBasic({app_id: config.DERIV_APP_ID});
 
 function App() {
   const dispatch = useDispatch();
   const {activeCategoryIndex} = useActiveCategory();
-  const appId = 36480; // 1089; // Replace with your appId or leave as 1089 for testing.
-  const connection = new WebSocket(
-    `wss://ws.binaryws.com/websockets/v3?app_id=${appId}`
-  );
-  const api = new DerivAPIBasic({connection});
 
   useEffect(() => {
     init();
+
+    // Clean up activity on umounting
+    return function cleanup() {
+      if (config.derivAPI.connection) {
+        config.derivAPI.connection.close();
+      }
+    };
   }, []);
 
   const init = () => {
     console.log('[App] >> [init]');
 
+    // Invoke method to fetch Active Symbols
     getActiveSymbols();
   };
 
   const getActiveSymbols = async () => {
     console.log('[App] >> [getActiveSymbols]');
-
-    connection.addEventListener('message', activeSymbolsResponse);
 
     // Show loader
     dispatch({
@@ -45,28 +48,42 @@ function App() {
       payload: true,
     });
 
-    await api.activeSymbols({
-      // landing_company: "maltainvest", // Uncomment landing_company if you want to retrieve specific symbols.
-      active_symbols: 'full',
-      product_type: 'basic',
-    });
+    config.derivAPI
+      .activeSymbols({
+        active_symbols: 'full',
+        product_type: 'basic',
+      })
+      .then(activeSymbolsResponse)
+      .catch(err => {
+        console.error('[App][getActiveSymbols] >> Exception: ', err);
+      });
   };
 
-  const activeSymbolsResponse = async res => {
+  const activeSymbolsResponse = async response => {
     console.log('[App] >> [activeSymbolsResponse]');
 
-    const data = JSON.parse(res.data);
-
-    // console.log('[AssetList][activeSymbolsResponse] >> data: ', data);
-
-    if (data.error !== undefined) {
-      console.log('Error : ', data.error?.message);
-      connection.removeEventListener('message', activeSymbolsResponse, false);
-      await api.disconnect();
+    // Check for any error
+    if (response?.error !== undefined) {
+      console.log(
+        'App][activeSymbolsResponse] >> Error: ',
+        response?.error?.message
+      );
+      return;
     }
 
-    if (data.msg_type === 'active_symbols') {
-      const activeSymbols = _.get(data, 'active_symbols', []);
+    if (response?.msg_type === 'active_symbols') {
+      const responseData = _.get(response, 'active_symbols', []);
+      const activeSymbols = _.sortBy(
+        _.take(
+          responseData,
+          config.DEBUG_MODE
+            ? config.DEBUG_MAX_ACTIVE_SYMBOLS
+            : responseData.length
+        ),
+        ['display_order']
+      );
+
+      // debugger; // eslint-disable-line no-debugger
 
       const {assetData} = activeSymbols.reduce(
         (prevObj, activeSymbol) => {
@@ -103,8 +120,6 @@ function App() {
         {markets: [], assetData: [], tabData: []}
       );
 
-      console.log('[App][activeSymbolsResponse] >> assetData: ', assetData);
-
       // Set initial reducer data
       setInitialReducerData(assetData);
 
@@ -114,8 +129,6 @@ function App() {
         payload: true,
       });
     }
-
-    connection.removeEventListener('message', activeSymbolsResponse, false);
   };
 
   const setInitialReducerData = assetData => {

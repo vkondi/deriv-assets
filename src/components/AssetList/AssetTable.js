@@ -48,14 +48,8 @@ export default function AssetTable() {
     massageTableData();
   }, [activeCategoryIndex, subCategoryIndex]);
 
-  useEffect(() => {
-    console.log('tableData: ', tableData);
-  }, [tableData]);
-
   const massageTableData = () => {
     console.log('[AssetTable] >> [massageTableData]');
-
-    console.log('subCategoryId: ', subCategoryId);
 
     if (subCategoryIndex === null) {
       setTableData(activeCategoryData);
@@ -146,7 +140,7 @@ export default function AssetTable() {
             <EnhancedTableHead />
             <TableBody>
               {tableData.map((row, index) => (
-                <TableRecord row={row} />
+                <TableRecord row={row} key={row?.display_name} />
               ))}
             </TableBody>
           </Table>
