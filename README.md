@@ -1,38 +1,53 @@
-[![Build Status](https://github.com/morewings/cra-template-quickstart-redux/actions/workflows/merge-jobs.yml/badge.svg)](https://github.com/morewings/cra-template-quickstart-redux/actions/workflows/merge-jobs.yml)
-[![yarn version](https://badge.fury.io/js/cra-template-quickstart-redux.svg)](https://www.npmjs.com/package/cra-template-quickstart-redux)
-[![npm](https://img.shields.io/npm/dm/cra-template-quickstart-redux)](https://www.npmjs.com/package/cra-template-quickstart-redux)
+# Deriv Assets React App
 
-# Quickstart Redux Create React App template
 
-Opinionated quickstart [Create React App](https://github.com/facebook/create-react-app) (CRA) template.
 
 ## Features
 
-* [Redux](https://redux.js.org/) for state management
-* Custom [middleware](https://github.com/morewings/cra-template-quickstart-redux/tree/master/src/middlewares) and [store enhancer](https://github.com/morewings/cra-template-quickstart-redux/tree/master/src/enhancers) examples
-* [Feature architecture](https://github.com/morewings/cra-template-quickstart-redux/wiki/Feature-architecture)
-* Example tests for everything done with [React Testing Library](https://testing-library.com/docs/react-testing-library/intro/)
-* [Eslint](https://eslint.org/) and [stylelint](https://stylelint.io/)
-* [Husky](https://typicode.github.io/husky/#/) and [lint-staged](https://github.com/okonet/lint-staged) to observe code quality
-* [CSS-modules](https://github.com/css-modules/css-modules) support
+* Asset list filtered by category
+* Real time price listing for each asset
+* Highest and lowest price of each asset in the last 24 hour period
+* Graphical representation of price fluctuation in last 24 hour period
 
-## Usage
 
+###### Note: 
+`All commands mentioned below must be run from the root folder of the application.`
+
+## Running locally
+
+For running locally,
 ```shell script
-npx create-react-app %PROJECT_NAME% --template quickstart-redux
-``` 
-Or
-```shell script
-yarn create react-app %PROJECT_NAME% --template quickstart-redux
+yarn install
 ```
 
-`npx` command installs most recent stable version of CRA from npm. `--template` parameter points to this template, note that `cra-template-` prefix is omitted.
 
-Then
+Then,
 
 ```shell script
-cd %PROJECT_NAME%
 yarn start
 ```
 
-See [full documentation](https://github.com/morewings/cra-template-quickstart-redux/wiki) or [demo](https://morewings.github.io/cra-template-quickstart-redux/)
+
+## Creating a build & running it
+
+Run build command,
+```shell script
+yarn build
+```
+
+If needed,
+
+```shell script
+yarn global add serve
+```
+
+Then,
+
+```shell script
+serve -s build
+```
+
+### Developer notes
+* [`src/config.js`](/src/config.js) has all the configurations used in the application.
+* Usage of `DEBUG_MODE` is implemented in case you face `rate limit` error due to usage of Basic API.
+* `DEBUG_MODE` is enabled by default. Change its value in `config.js` to `false` to run the application with full data from Basic API.
