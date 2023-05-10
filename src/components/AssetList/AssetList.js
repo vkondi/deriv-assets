@@ -1,4 +1,4 @@
-import {useState, useEffect} from 'react';
+import {useState} from 'react';
 import {useDispatch} from 'react-redux';
 
 import Box from '@mui/material/Box';
@@ -36,14 +36,6 @@ export default function AssetList() {
   const [anchorEl, setAnchorEl] = useState(null);
 
   const open = Boolean(anchorEl);
-
-  useEffect(() => {
-    init();
-  }, []);
-
-  const init = () => {
-    console.log('[AssetList] >> [init]');
-  };
 
   const onMenuSelect = index => {
     console.log('[AssetList] >> [onMenuSelect]');
@@ -84,6 +76,7 @@ export default function AssetList() {
   if (Array.isArray(tabData) && tabData.length > 0) {
     return (
       <Box sx={{maxWidth: '100%', bgcolor: 'background.paper'}}>
+        {/* Toolbar at the top of the page */}
         <AppBar position="static">
           <Toolbar>
             <IconButton
@@ -136,6 +129,7 @@ export default function AssetList() {
           </Toolbar>
         </AppBar>
 
+        {/* Table Data */}
         <AssetTable />
       </Box>
     );

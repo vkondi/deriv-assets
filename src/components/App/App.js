@@ -14,6 +14,7 @@ import {
   SET_ACTIVE_CATEGORY,
 } from 'features/assetlist/actionTypes';
 import config from '../../config';
+import {shuffleArray} from '../../helpers/utils';
 
 config.derivAPI = new DerivAPIBasic({app_id: config.DERIV_APP_ID});
 
@@ -73,15 +74,9 @@ function App() {
 
     if (response?.msg_type === 'active_symbols') {
       const responseData = _.get(response, 'active_symbols', []);
-      const activeSymbols = _.sortBy(
-        _.take(
-          responseData,
-          config.DEBUG_MODE
-            ? config.DEBUG_MAX_ACTIVE_SYMBOLS
-            : responseData.length
-        ),
-        ['display_order']
-      );
+      const activeSymbols = config.DEBUG_MODE
+        ? _.take(shuffleArray(responseData), config.DEBUG_MAX_ACTIVE_SYMBOLS)
+        : _.sortBy(responseData, ['display_order']);
 
       // debugger; // eslint-disable-line no-debugger
 

@@ -35,3 +35,12 @@
   position: relative;
   top: 1px;
 }
+
+.spotPercentDiv {
+  align-items: center !important;
+  display: inline-flex;
+}
+
+.spotPercentSpan {
+  margin-right: 5px;
+}

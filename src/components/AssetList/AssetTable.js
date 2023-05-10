@@ -15,7 +15,7 @@ import Button from '@mui/material/Button';
 import Stack from '@mui/material/Stack';
 import TableRecord from './TableRecord';
 
-function EnhancedTableHead() {
+function TableHeader() {
   const tableHeaderData = useTableHeaderData();
 
   return (
@@ -48,6 +48,7 @@ export default function AssetTable() {
     massageTableData();
   }, [activeCategoryIndex, subCategoryIndex]);
 
+  // Massage Table Data based on filter(s)
   const massageTableData = () => {
     console.log('[AssetTable] >> [massageTableData]');
 
@@ -60,6 +61,7 @@ export default function AssetTable() {
     }
   };
 
+  // Dynamically extract the sub categories for the selected category
   const manageSubCategoryData = () => {
     console.log('[AssetTable] >> [manageSubCategoryData]');
 
@@ -70,8 +72,6 @@ export default function AssetTable() {
       (prevObj, item) => {
         const prevSubCatData = _.get(prevObj, 'subCatdata', []);
         const prevArray = _.get(prevObj, 'array', []);
-        const tempArray = [];
-
         const id = _.get(item, 'submarket');
         const displayName = _.get(item, 'submarket_display_name');
 
@@ -137,7 +137,7 @@ export default function AssetTable() {
             sx={{minWidth: 750, marginTop: '30px'}}
             aria-labelledby="tableTitle"
             size="medium">
-            <EnhancedTableHead />
+            <TableHeader />
             <TableBody>
               {tableData.map((row, index) => (
                 <TableRecord row={row} key={row?.display_name} />
